@@ -15,6 +15,12 @@ var currUrl = "";
 var currTitle = "";
 var isCorrect = true;
 var currNextUrl = "";
+var hasStarted = false;
+var isMuted = false;
+var lastVol = 0;
+var loop;
+var nowPlaying = "";
+var url  = ""
 
 
 $(function() {
@@ -25,10 +31,23 @@ $(function() {
     .slider({
         max: 20,
         min: 0,
+        value: 0,
         range: "min",
         change: function (event, ui){
-        	console.log(ui.value);
-        	$("#vid").prop('volume', ui.value/20);
+	    	$("#vid").prop('volume', ui.value/20);
+	    	if (isMuted && ui.value != 0){
+	    		isMuted = false;
+				$("#down").html("volume_down")
+	    	}
+	    	if (!isMuted && ui.value < 11){
+	    		$("#down").html("volume_down")
+	    	}
+	    	if (!isMuted && ui.value == 0){
+	    		$("#down").html("volume_mute")
+	    	}
+	    	if (!isMuted && ui.value > 10){
+	    		$("#down").html("volume_up")
+	    	}
         }
     })
     .slider("pips", {
@@ -39,49 +58,84 @@ $(function() {
     $("#vid").prop('volume', $("#flat-slider").slider("value")/20)
 
 
-
 	document.getElementById('vid').addEventListener('ended', hadEnded ,false);
 	
 	//update config player
 	window.Twitch.ext.listen("broadcast", (x,y,data) => {
 		var dataF = JSON.parse(JSON.parse(JSON.stringify(data)))
 		if (dataF.length == 2){
-			console.log(dataF[0])
-			isPaused = false;
-			console.log(dataF[1]);
-			$("#url").html(dataF[1]);
-			if ($('#url')[0].scrollWidth >=  $(document).width()) {
-				console.log($('#url')[0].scrollWidth)
-				console.log($(document).width())
-				console.log("big");
-				$("#url").addClass('temp');
-			} else {
-				console.log($('#url')[0].scrollWidth)
-				console.log($(document).width())
-				$("#url").removeClass('temp');
+			if ((!isLoop && !(dataF[0] === nowPlaying)) || (isLoop && hasEnded)){
+				isPaused = false;
+			$	('.play').html("pause");
+
+				console.log(nowPlaying)
+				console.log(dataF[0])
+				nowPlaying = dataF[0];
+				hasStarted = true;
+				// console.log(dataF[0])
+				// console.log(dataF[1]);
+				$("#url").html(dataF[1]);
+				if ($('#url')[0].scrollWidth >=  $(document).width()) {
+					$("#url").addClass('temp');
+				} else {
+					$("#url").removeClass('temp');
+				}
+				$("#vid").attr("src", dataF[0]);
+				$("#vid").load();
+				
+				isPaused = false;
+    			$('.play').html("pause");
+				if (!isPaused){
+					$("#vid").play();
+				}			
 			}
-			$('.play').html("pause");
-	    	isPaused = false;
-			$("#vid").attr("src", dataF[0]);
-			$("#vid").load();
-			$("#vid").play();
 		} else if (dataF.length == 1){
 			var event = dataF[0];
 			console.log(event);
-			if (event.localeCompare("pause") == 0){
-				console.log("wefefe")
-				document.getElementById("vid").pause();
-			}
-			if (event.localeCompare("play") == 0){
-				document.getElementById("vid").play();
-			}
+			// if (event.localeCompare("pause") == 0){
+			// 	console.log("wefefe")
+			// 	document.getElementById("vid").pause();
+			// }
+			// if (event.localeCompare("play") == 0){
+			// 	document.getElementById("vid").play();
+			// }
 		}
 	});
 
+	// $(document).on("click","#next, #submit, #prev", function() {
+	// 	// console.log("clickeddededed")
+	// 	hasStarted = false;
+	// 	clearInterval(loop);
+	// })
 
+	$("#down").click(function(){
+		if (!isMuted){
+			console.log("efefe")
+			isMuted = true;
+			lastVol = $("#flat-slider").slider("value");
+			$("#flat-slider").slider("value", 0);
+			$("#down").prop('volume', 0);
+			$("#down").html("volume_off")
+		} else {
+			$("#down").prop('volume', lastVol)
+			if (lastVol > 10){
+				$("#down").html("volume_up")
+			} else if (lastVol > 0){
+				$("#down").html("volume_down")
+			} else {
+				$("#down").html("volume_mute")
+			}
+			$("#flat-slider").slider("value", lastVol);
+			isMuted = false;
+		}
+	})
 
 //submit vid
 	$('#submit').click(async function() {
+		hasStarted = false;
+		clearInterval(loop);
+
+
 		const youLink = $('#link')[0].value.toString();
 		isPlaylist = false;
 		await getLink(youLink);
@@ -97,8 +151,13 @@ $(function() {
 			currUrl = url;
 			currTitle = title;
 			currNextUrl = nextUrl;
-			window.Twitch.ext.send("broadcast", "array", [url, title]);
+			looper([url, title]);
+			// window.Twitch.ext.send("broadcast", "array", [url, title]);
+			console.log(nextUrl + "_________________")
 			await getLink(nextUrl);
+			//4caf50
+			$(".input-field input:focus").css("border-bottom-color", "#4caf50 !important")
+			$(".input-field input:focus").css("box-shadow", "0 1px 0 0 #4caf50 !important")
 		} else {
 			$("#link").addClass("invalid left-alert");
 			$('#modal').modal();
@@ -107,11 +166,21 @@ $(function() {
 	});
 
 	$('#next').click(async () => {
+		hasStarted = false;
+		clearInterval(loop);
+
 		lastInfo = [currUrl, currTitle]
 		if (isLoop){
-			window.Twitch.ext.send("broadcast", "array", [currUrl, currTitle]);
+			looper([currUrl, currTitle]);
+
+			// window.Twitch.ext.send("broadcast", "array", [currUrl, currTitle]);
 		} else {
-			window.Twitch.ext.send("broadcast", "array", [url, title]);
+			looper([url, title]);
+			console.log("------------")
+			console.log(nextUrl)
+			console.log("------------")
+
+			// window.Twitch.ext.send("broadcast", "array", [url, title]);
 			currUrl = url;
 			currTitle = title;
 			await getLink(nextUrl);
@@ -119,7 +188,9 @@ $(function() {
 	})
 
   	$('#prev').click(async function() {
-  		console.log(document.getElementById("vid").currentTime);
+		hasStarted = false;
+		clearInterval(loop);
+
   		if (document.getElementById("vid").currentTime <= 5){
   			if (!isLoop){
 	  			currUrl = lastInfo[0];
@@ -132,15 +203,18 @@ $(function() {
 		  				pos = playlistUrlList.length - 2;
 		  			}
 		  			await getLink(playlistUrlList[pos])
-		  			window.Twitch.ext.send("broadcast", "array", [url, title]);	
+					looper([url, title]);
+
+		  			// window.Twitch.ext.send("broadcast", "array", [url, title]);	
 		  			await getLink(nextUrl);  				
 	  			}
-				console.log(currNextUrl);
 			} else {
-				window.Twitch.ext.send("broadcast", "array", [currUrl, currTitle]);	
+				looper([currUrl, currTitle]);
+				// window.Twitch.ext.send("broadcast", "array", [currUrl, currTitle]);	
 			}
   		} else {
-	  		window.Twitch.ext.send("broadcast", "array", [currUrl, currTitle]);	
+			looper([currUrl, currTitle]);
+	  		// window.Twitch.ext.send("broadcast", "array", [currUrl, currTitle]);	
   		}
   	})
 
@@ -149,10 +223,15 @@ $(function() {
     		$('.play').html("pause");
     		window.Twitch.ext.send("broadcast", "array", ["play"]);
     		isPaused = false;
+    		document.getElementById("vid").play();
+
     	} else {
+    		// clearInterval(loop);
     		$('.play').html("play_arrow");
     		window.Twitch.ext.send("broadcast", "array", ["pause"]);
     		isPaused = true;
+    		document.getElementById("vid").pause();
+
     	}
   	});
 
@@ -172,9 +251,16 @@ $(function() {
   		if (isLoop){
   			$('.loop').css('color', "#9e9e9e");
   			isLoop = false;
+  			window.Twitch.ext.send("broadcast", "array", ["loop0"]);
+  			$('.loop').addClass("disabled")
+
 		} else {
   			$('.loop').css('color', "#6441A4");
   			isLoop = true;
+  			window.Twitch.ext.send("broadcast", "array", ["loop1"]);
+  			$('.loop').removeClass("disabled")
+
+
 		}
   	})
 
@@ -183,12 +269,16 @@ $(function() {
 
 //check if ended
 async function hadEnded(e) {
+	hasStarted = false;
+	clearInterval(loop);
 	lastInfo = [currUrl, currTitle]
 	if (isLoop){
-		window.Twitch.ext.send("broadcast", "array", [currUrl, currTitle]);
+		looper([currUrl, currTitle]);
+		// window.Twitch.ext.send("broadcast", "array", [currUrl, currTitle]);
 	} else {
 		// await getLink(nextUrl);
-		window.Twitch.ext.send("broadcast", "array", [url, title]);
+		looper([url, title])
+		// window.Twitch.ext.send("broadcast", "array", [url, title]);
 		currUrl = url;
 		currTitle = title;
 		currNextUrl = nextUrl;
@@ -197,75 +287,73 @@ async function hadEnded(e) {
 
 }
 
+
+function looper(array){
+	loop = setInterval(function() {
+		window.Twitch.ext.send("broadcast", "array", array);
+	}, 2500)
+}
+
+
 //link getting function and logic
 async function getLink(link){
 
-	AWS.config.update({accessKeyId: 'AKIAJPACPXZ5WGQRB3MQ', secretAccessKey: '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'});
-	if (!AWS.config.region) {
-	  AWS.config.update({
-	    region: 'us-east-2'
-	  });
-	}
-	var lambda = new AWS.Lambda();
-	var params = {
+	console.log(link + "[[[[[[[[[[[[[[[");
+	url = encodeURIComponent(link)
+    url = "https://1gcnlajurd.execute-api.us-east-2.amazonaws.com/testStage/data?url=" + url
+    console.log(url)
 
-	  FunctionName: 'testFunc', /* required */
+    let response = await fetch(url);
 
-	  Payload: JSON.stringify(link),
-
-	};
-
-	await lambda.invoke(params, function(err, data) {
-
-	  if (err) console.log(err, err.stack);
-
-	}).promise().then(async data => {
-		ret = JSON.parse(JSON.parse(JSON.stringify(data.Payload)))
-		if (!(ret === "na")){
-			isCorrect = true;
-			if (ret.join().includes("googlevideo") && !isPlaylist){
-				console.log("single")
-				//single vid
-				url = ret[0]
-				nextUrl = ret[1]
-				title = ret[2]
-			} else if (isPlaylist) {
-				//playlist vids
-				console.log("midthing")
-				url = ret[0]
-				if (isShuffle){
-					pos = Math.floor(Math.random() * Math.floor(playlistUrlList.length));
-					while (playlistUrlList[pos] === url){
+      // Examine the text in the response
+    await response.json().then(async function(data) {
+        console.log(data);
+	      ret = data;
+	      console.log(ret[1]);
+		  if (!(ret === "na")){
+				isCorrect = true;
+				if (ret.join().includes("googlevideo") && !isPlaylist){
+					console.log("single")
+					//single vid
+					url = ret[0]
+					nextUrl = ret[1]
+					console.log(nextUrl)
+					title = ret[2]
+				} else if (isPlaylist) {
+					//playlist vids
+					console.log("midthing")
+					url = ret[0]
+					if (isShuffle){
 						pos = Math.floor(Math.random() * Math.floor(playlistUrlList.length));
+						while (playlistUrlList[pos] === url){
+							pos = Math.floor(Math.random() * Math.floor(playlistUrlList.length));
+						}
+					} else {
+						pos++;				
 					}
+					if (pos < playlistUrlList.length){
+						nextUrl = playlistUrlList[pos]
+					} else {
+						nextUrl = playlistUrlList[0]
+					}
+					title = ret[2]
 				} else {
-					pos++;				
+					//is a playlist
+					console.log("playslisititin")
+					isPlaylist = true;
+					playlistUrlList = ret;
+					if (link.split("index=").length == 2){
+						pos = link.split("&t=")[0].split("index=")[1] - 1;
+					} else {
+						pos = 0;
+					}
+					if (isShuffle){
+						pos = Math.floor(Math.random() * (playlistUrlList.length));
+					}
+					await getLink(playlistUrlList[pos]);
 				}
-				if (pos < playlistUrlList.length){
-					nextUrl = playlistUrlList[pos]
-				} else {
-					nextUrl = playlistUrlList[0]
-				}
-				title = ret[2]
 			} else {
-				//is a playlist
-				console.log("playslisititin")
-				isPlaylist = true;
-				playlistUrlList = ret;
-				if (link.split("index=").length == 2){
-					pos = link.split("&t=")[0].split("index=")[1] - 1;
-				} else {
-					pos = 0;
-				}
-				console.log(playlistUrlList.length)
-				if (isShuffle){
-					pos = Math.floor(Math.random() * (playlistUrlList.length));
-				}
-				console.log(pos);
-				await getLink(playlistUrlList[pos]);
+				isCorrect = false;
 			}
-		} else {
-			isCorrect = false;
-		}
-	});
+      });
 }

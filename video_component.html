@@ -3,32 +3,73 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+
+    <link rel="stylesheet" href="sharedcss/jquery-ui.css">
+    <link rel="stylesheet" href="sharedcss/jquery-ui-slider-pips.css">
+    
     <link rel="stylesheet" href="css/viewer.css">
     <link rel="stylesheet" href="sharedcss/materialize.min.css">
+    <script src="sharedjs/analytic.js"></script>
+
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@100;200;300;400;500;600;700&display=swap" rel="stylesheet">
 
   </head>
-  <body>
+  <body id="body">
     <script src="https://extension-files.twitch.tv/helper/v1/twitch-ext.min.js"></script>
 
-    <script src="sharedjs/materialize.min.js" type="text/javascript"></script>
     <script src="sharedjs/jquery-3.3.1.min.js" type="text/javascript"></script>
+    <script src="sharedjs/jquery-ui.js" type="text/javascript"></script>
+    <script src="sharedjs/jquery-ui-slider-pips.js" type="text/javascript"></script>
+    <script src="sharedjs/jquery.validate.min.js" type="text/javascript"></script>
+
+    <script src="sharedjs/nouislider.min.js" type="text/javascript"></script>
+    <script src="sharedjs/materialize.js" type="text/javascript"></script>
     <script src="js/viewer.js" type="text/javascript"></script>
-  
-
-    <div id="wrapper">
-      <div id="holder">
-        <audio src="" controls id = "vid" controlsList="nodownload" autoplay="autoplay"></audio>
-      </div>
-    </div>
-
-    <div id="start">
-      <button>Click to Begin!</button>
-    </div>
 
 
-    <div>
+
+    <div id="now">
       Now Playing: 
-      <div id="url"></div>
     </div>
+
+    <div id= "parenturl">
+      <div id="url" class=""></div>
+    </div>
+
+    
+    <audio src="" controls id = "vid" controlsList="nodownload" autoplay="autoplay"></audio>
+<!--     <div class="themeWrap"><i class="material-icons inl" id="theme">brightness_3</i></div>
+ -->
+
+  
+    <div id="volume">
+          <i class="material-icons inl" id="down">volume_down</i>
+          <div id="flat-slider" class="slider"></div>
+<!--           <i class="material-icons inl" id="up">volume_up</i>
+ -->    </div>
+
+    <div class="waves-effect waves-light btn-block">Click anywhere<br>to get started!</div>
+
+
+
   </body>
 </html>
+
+<!-- <script type="text/javascript">
+  isMuted = false;
+  function muter(){
+    if (!isMuted){
+      console.log("Efeef");
+      $("#down").prop('volume', $("#flat-slider").slider("value")/20)
+      isMuted = true;
+      $("#down").html("volume_off")
+    } else {
+      console.log("fecidnwc")
+      $("#down").prop('volume', 0);
+      $("#down").html("volume_down")
+      isMuted = false;
+    }
+  }
+</script> -->
