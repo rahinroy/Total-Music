@@ -18,6 +18,9 @@ js/main.js
 viewer side:
 video_component.html
 css/viewer.css
+
+
+lambda.js is the server side stuff (hosted on AWS)
 js/viewer.js
 
 everything else is just helper files
