@@ -13,9 +13,9 @@ js/main.js
 
 
 #### viewer side:
-video_component.html
-css/viewer.css
-js/viewer.js
+video_component.html  
+css/viewer.css  
+js/viewer.js  
 
 #### backend: 
 lambda.js is the server side stuff (hosted on AWS)
