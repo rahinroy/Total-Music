@@ -21,10 +21,15 @@ var lastVol = 0;
 var loop;
 var nowPlaying = "";
 var url  = ""
+var hasEnded = false;
+
 
 
 $(function() {
 
+	document.getElementById('vid').addEventListener("ended", function(){
+		hasEnded = true;
+	})
   
   // UI loaded
   $("#flat-slider").slider()
@@ -66,14 +71,12 @@ $(function() {
 		if (dataF.length == 2){
 			if ((!isLoop && !(dataF[0] === nowPlaying)) || (isLoop && hasEnded)){
 				isPaused = false;
-			$	('.play').html("pause");
+				$('.play').html("pause");
 
-				console.log(nowPlaying)
-				console.log(dataF[0])
 				nowPlaying = dataF[0];
 				hasStarted = true;
-				// console.log(dataF[0])
-				// console.log(dataF[1]);
+				hasEnded = false;
+
 				$("#url").html(dataF[1]);
 				if ($('#url')[0].scrollWidth >=  $(document).width()) {
 					$("#url").addClass('temp');
@@ -91,26 +94,12 @@ $(function() {
 			}
 		} else if (dataF.length == 1){
 			var event = dataF[0];
-			console.log(event);
-			// if (event.localeCompare("pause") == 0){
-			// 	console.log("wefefe")
-			// 	document.getElementById("vid").pause();
-			// }
-			// if (event.localeCompare("play") == 0){
-			// 	document.getElementById("vid").play();
-			// }
 		}
 	});
 
-	// $(document).on("click","#next, #submit, #prev", function() {
-	// 	// console.log("clickeddededed")
-	// 	hasStarted = false;
-	// 	clearInterval(loop);
-	// })
 
 	$("#down").click(function(){
 		if (!isMuted){
-			console.log("efefe")
 			isMuted = true;
 			lastVol = $("#flat-slider").slider("value");
 			$("#flat-slider").slider("value", 0);
@@ -147,13 +136,11 @@ $(function() {
 			}
 			$('#play').removeClass('disabled')
 			$('#next').removeClass('disabled')
-			console.log(isPlaylist);
 			currUrl = url;
 			currTitle = title;
 			currNextUrl = nextUrl;
 			looper([url, title]);
 			// window.Twitch.ext.send("broadcast", "array", [url, title]);
-			console.log(nextUrl + "_________________")
 			await getLink(nextUrl);
 			//4caf50
 			$(".input-field input:focus").css("border-bottom-color", "#4caf50 !important")
@@ -172,15 +159,8 @@ $(function() {
 		lastInfo = [currUrl, currTitle]
 		if (isLoop){
 			looper([currUrl, currTitle]);
-
-			// window.Twitch.ext.send("broadcast", "array", [currUrl, currTitle]);
 		} else {
 			looper([url, title]);
-			console.log("------------")
-			console.log(nextUrl)
-			console.log("------------")
-
-			// window.Twitch.ext.send("broadcast", "array", [url, title]);
 			currUrl = url;
 			currTitle = title;
 			await getLink(nextUrl);
@@ -298,30 +278,23 @@ function looper(array){
 //link getting function and logic
 async function getLink(link){
 
-	console.log(link + "[[[[[[[[[[[[[[[");
 	url = encodeURIComponent(link)
     url = "https://1gcnlajurd.execute-api.us-east-2.amazonaws.com/testStage/data?url=" + url
-    console.log(url)
 
     let response = await fetch(url);
 
       // Examine the text in the response
     await response.json().then(async function(data) {
-        console.log(data);
 	      ret = data;
-	      console.log(ret[1]);
 		  if (!(ret === "na")){
 				isCorrect = true;
 				if (ret.join().includes("googlevideo") && !isPlaylist){
-					console.log("single")
 					//single vid
 					url = ret[0]
 					nextUrl = ret[1]
-					console.log(nextUrl)
 					title = ret[2]
 				} else if (isPlaylist) {
 					//playlist vids
-					console.log("midthing")
 					url = ret[0]
 					if (isShuffle){
 						pos = Math.floor(Math.random() * Math.floor(playlistUrlList.length));
@@ -339,7 +312,6 @@ async function getLink(link){
 					title = ret[2]
 				} else {
 					//is a playlist
-					console.log("playslisititin")
 					isPlaylist = true;
 					playlistUrlList = ret;
 					if (link.split("index=").length == 2){

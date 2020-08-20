@@ -11,16 +11,23 @@ Planned to be released in September.
 
 
 broadcaster side:
-live_config.html 
+
+live_config.html
+ 
 css/live.css
+
 js/main.js
 
+
 viewer side:
+
 video_component.html
+
 css/viewer.css
+
+js/viewer.js
 
 
 lambda.js is the server side stuff (hosted on AWS)
-js/viewer.js
 
 everything else is just helper files

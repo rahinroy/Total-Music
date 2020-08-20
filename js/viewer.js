@@ -24,23 +24,6 @@ var isLoop = false;
 
 $(function() {
 
-	// (function(i, s, o, g, r, a, m) {
-	//     i['GoogleAnalyticsObject'] = r;
-	//     i[r] = i[r] || function() {
-	//         (i[r].q = i[r].q || []).push(arguments)
-	//     }, i[r].l = 1 * new Date();
-	//     a = s.createElement(o), m = s.getElementsByTagName(o)[0];
-	//     a.async = 1;
-	//     a.src = g;
-	//     m.parentNode.insertBefore(a, m)
-	// })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
-	// ga('create', 'UA12345678', 'auto');
-	// ga('set', 'anonymizeIp', true);
-
- //    ga('send', 'event', 'Load', 'Load_'+$("#now").text(), 'PageLoaded');
-
-
-
 	document.getElementById('vid').addEventListener("ended", function(){
 		hasEnded = true;
 	})
@@ -59,7 +42,6 @@ $(function() {
 	    range: "min",
 	    value: 0,
 	    change: function (event, ui){
-	    	console.log(ui.value);
 	    	$("#vid").prop('volume', ui.value/20);
 	    	if (isMuted && ui.value != 0){
 	    		isMuted = false;
@@ -96,17 +78,10 @@ $(function() {
 
 				hasEnded = false;
 				currUrl = dataF[0]
-				console.log(dataF[0])
-				console.log(dataF[1]);
 				$("#url").html(dataF[1]);
 				if ($('#url')[0].scrollWidth >=  $(document).width()) {
-					console.log($('#url')[0].scrollWidth)
-					console.log($(document).width())
-					console.log("big");
 					$("#url").addClass('temp');
 				} else {
-					console.log($('#url')[0].scrollWidth)
-					console.log($(document).width())
 					$("#url").removeClass('temp');
 				}
 				$('.play').html("pause");
@@ -118,9 +93,7 @@ $(function() {
 			}
 		} else if (dataF.length == 1){
 			var event = dataF[0];
-			console.log(event);
 			if (event.localeCompare("pause") == 0){
-				console.log("wefefe")
 				document.getElementById("vid").pause();
 				isPaused = true;
 			}
@@ -139,7 +112,6 @@ $(function() {
 
 	$("#down").click(function(){
 		if (!isMuted){
-			console.log("efefe")
 			isMuted = true;
 			lastVol = $("#flat-slider").slider("value");
 			$("#flat-slider").slider("value", 0);
@@ -165,7 +137,6 @@ $(function() {
 	// $("#flat-slider.ui-slider .ui-slider-line").css("background", "#d5cebc");
 	$(".themeWrap").click(function() {
 		if (isLight) {
-			console.log("ooakokaoa")
 			isLight = false;
 			$("body").addClass("moon")
 			$("body").removeClass("sun")
@@ -175,7 +146,6 @@ $(function() {
 			$("#flat-slider.ui-slider .ui-slider-line").css("background", "#d5cebc");
 
 		} else {
-			console.log("Fefe")
 			isLight = true;
 			$("body").addClass("sun")
 			$("body").removeClass("moon")
