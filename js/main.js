@@ -64,39 +64,6 @@ $(function() {
 
 
 	document.getElementById('vid').addEventListener('ended', hadEnded ,false);
-	
-	//update config player
-	window.Twitch.ext.listen("broadcast", (x,y,data) => {
-		var dataF = JSON.parse(JSON.parse(JSON.stringify(data)))
-		if (dataF.length == 2){
-			if ((!isLoop && !(dataF[0] === nowPlaying)) || (isLoop && hasEnded)){
-				isPaused = false;
-				$('.play').html("pause");
-
-				nowPlaying = dataF[0];
-				hasStarted = true;
-				hasEnded = false;
-
-				$("#url").html(dataF[1]);
-				if ($('#url')[0].scrollWidth >=  $(document).width()) {
-					$("#url").addClass('temp');
-				} else {
-					$("#url").removeClass('temp');
-				}
-				$("#vid").attr("src", dataF[0]);
-				$("#vid").load();
-				
-				isPaused = false;
-    			$('.play').html("pause");
-				if (!isPaused){
-					$("#vid").play();
-				}			
-			}
-		} else if (dataF.length == 1){
-			var event = dataF[0];
-		}
-	});
-
 
 	$("#down").click(function(){
 		if (!isMuted){
@@ -127,7 +94,10 @@ $(function() {
 
 		const youLink = $('#link')[0].value.toString();
 		isPlaylist = false;
+		// window.Twitch.ext.rig.log(youLink);
 		await getLink(youLink);
+		// console.log([url, title])
+
 		if (isCorrect){
 			if (isPlaylist){
 				$('#prev').removeClass('disabled')
@@ -247,6 +217,41 @@ $(function() {
 });
 
 
+
+//update config player
+function updatePlayer(data) {
+	console.log(data)
+	var dataF = data
+	if (dataF.length == 2){
+		if ((!isLoop && !(dataF[0] === nowPlaying)) || (isLoop && hasEnded)){
+			isPaused = false;
+			$('.play').html("pause");
+
+			nowPlaying = dataF[0];
+			hasStarted = true;
+			hasEnded = false;
+
+			$("#url").html(dataF[1]);
+			if ($('#url')[0].scrollWidth >=  $(document).width()) {
+				$("#url").addClass('temp');
+			} else {
+				$("#url").removeClass('temp');
+			}
+			$("#vid").attr("src", dataF[0]);
+			$("#vid").load();
+			
+			isPaused = false;
+			$('.play').html("pause");
+			if (!isPaused){
+				$("#vid").play();
+			}			
+		}
+	} else if (dataF.length == 1){
+		var event = dataF[0];
+	}
+};
+
+
 //check if ended
 async function hadEnded(e) {
 	hasStarted = false;
@@ -269,63 +274,91 @@ async function hadEnded(e) {
 
 
 function looper(array){
-	loop = setInterval(function() {
-		window.Twitch.ext.send("broadcast", "array", array);
-	}, 2500)
+	window.Twitch.ext.rig.log(array);
+	console.log("reached looper")
+	window.Twitch.ext.send("broadcast", "array", array);
+	updatePlayer(array)
+	// loop = setInterval(function() {
+	// 	window.Twitch.ext.send("broadcast", "array", array);
+	// }, 2500)
 }
 
 
 //link getting function and logic
 async function getLink(link){
+	// console.log(link)
 
-	url = encodeURIComponent(link)
-    url = "https://1gcnlajurd.execute-api.us-east-2.amazonaws.com/testStage/data?url=" + url
+	// url = encodeURIComponent(link)
+	// url = "https://od8y9rrew7.execute-api.us-east-2.amazonaws.com/default/testFunc?url=" + url
 
-    let response = await fetch(url);
+	var myHeaders = new Headers();
+	myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
 
+	var urlencoded = new URLSearchParams();
+	urlencoded.append("link", link);
+
+	var requestOptions = {
+	method: 'POST',
+	headers: myHeaders,
+	body: urlencoded,
+	redirect: 'follow'
+	};
+
+	let data;
+	await fetch("http://localhost:3000", requestOptions)
+	.then(response => response.json())
+	.then(info => data = info);
+  
+	// data = await data.json()
+	// console.log(JSON.stringify(data))
+	data = data.substring(2, data.length - 1).split(",")
+	// console.log(data)
+
+
+	// window.Twitch.ext.rig.log(response.json())
       // Examine the text in the response
-    await response.json().then(async function(data) {
-	      ret = data;
-		  if (!(ret === "na")){
-				isCorrect = true;
-				if (ret.join().includes("googlevideo") && !isPlaylist){
-					//single vid
-					url = ret[0]
-					nextUrl = ret[1]
-					title = ret[2]
-				} else if (isPlaylist) {
-					//playlist vids
-					url = ret[0]
-					if (isShuffle){
-						pos = Math.floor(Math.random() * Math.floor(playlistUrlList.length));
-						while (playlistUrlList[pos] === url){
-							pos = Math.floor(Math.random() * Math.floor(playlistUrlList.length));
-						}
-					} else {
-						pos++;				
-					}
-					if (pos < playlistUrlList.length){
-						nextUrl = playlistUrlList[pos]
-					} else {
-						nextUrl = playlistUrlList[0]
-					}
-					title = ret[2]
-				} else {
-					//is a playlist
-					isPlaylist = true;
-					playlistUrlList = ret;
-					if (link.split("index=").length == 2){
-						pos = link.split("&t=")[0].split("index=")[1] - 1;
-					} else {
-						pos = 0;
-					}
-					if (isShuffle){
-						pos = Math.floor(Math.random() * (playlistUrlList.length));
-					}
-					await getLink(playlistUrlList[pos]);
+    
+	// window.Twitch.ext.rig.log(data);
+	ret = data;
+	if (!(ret === "na")){
+		isCorrect = true;
+		if (ret.join().includes("googlevideo") && !isPlaylist){
+			//single vid
+			url = ret[0]
+			nextUrl = ret[1]
+			title = ret[2]
+		} else if (isPlaylist) {
+			//playlist vids
+			url = ret[0]
+			if (isShuffle){
+				pos = Math.floor(Math.random() * Math.floor(playlistUrlList.length));
+				while (playlistUrlList[pos] === url){
+					pos = Math.floor(Math.random() * Math.floor(playlistUrlList.length));
 				}
 			} else {
-				isCorrect = false;
+				pos++;				
 			}
-      });
+			if (pos < playlistUrlList.length){
+				nextUrl = playlistUrlList[pos]
+			} else {
+				nextUrl = playlistUrlList[0]
+			}
+			title = ret[2]
+		} else {
+			//is a playlist
+			isPlaylist = true;
+			playlistUrlList = ret;
+			if (link.split("index=").length == 2){
+				pos = link.split("&t=")[0].split("index=")[1] - 1;
+			} else {
+				pos = 0;
+			}
+			if (isShuffle){
+				pos = Math.floor(Math.random() * (playlistUrlList.length));
+			}
+			await getLink(playlistUrlList[pos]);
+		}
+	} else {
+		isCorrect = false;
+	}
 }

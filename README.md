@@ -2,8 +2,6 @@
 
 An extension for Twitch.tv to play music from the audience end to avoid DMCA issues for streamers
 
-Planned to be released in September.
-
 
 ## File Structure:
 #### broadcaster side:

@@ -1,31 +1,20 @@
-var url = "";
-var ret = [];
-var nextUrl = "";
-var playlistUrlList = []; 
-var pos = 0;
-var title = "";
-var isPlaylist = false;
-var isPaused = true;
-var isShuffle = false;
-var isLoop = false;
-var lastInfo = ["",""];
-var sliderVal = 0;
-var currLink = "";
-var currUrl = "";
-var currTitle = "";
-var isCorrect = true;
-var currNextUrl = "";
+// const serverURL = "http://localhost:8080"
+const serverURL = 'https://twitchmusic.app'
+
+
+var latestVidTime = -1;
+var channelID = -1;
+var userID = -1;
 var isMuted = false;
 var lastVol = 0;
-var isLight = false;
-var hasEnded = false;
-var counter = 0;
-var isLoop = false;
 
-$(function() {
 
-	document.getElementById('vid').addEventListener("ended", function(){
-		hasEnded = true;
+$(async function() {
+
+
+	window.Twitch.ext.onAuthorized(function(auth) {
+		console.log(auth.channelId)
+		resolve(auth.channelId)
 	})
 
 	$(".btn-block").click(function() {
@@ -35,6 +24,96 @@ $(function() {
 	function hider() {
 		$(".btn-block").hide();
 	}
+
+
+	initializeSlider();
+	let extInfo = await initializeValues();
+	channelID = extInfo[0]
+	userID = extInfo[1]
+	getCurrentSong();
+
+	//testing pubsub stuff
+    window.Twitch.ext.listen("global", (target, contentType, message) => {
+		console.log(message)
+	})
+
+	
+});
+
+
+
+function initializeValues(){
+	return new Promise(function(resolve, reject) {
+		window.Twitch.ext.onAuthorized(function(auth) {
+			console.log(auth.channelId)
+			resolve([auth.channelId, window.Twitch.ext.viewer.id])
+		})
+	})
+}
+
+
+function updatePlayer(url, title){
+	//title scrolling animation
+	$("#url").html(title);
+	if ($('#url')[0].scrollWidth >=  $(document).width()) {
+		$("#url").addClass('temp');
+	} else {
+		$("#url").removeClass('temp');
+	}
+
+	//audio update
+	$("#vid").attr("src", url);
+	$("#vid")[0].play();
+}
+
+async function getCurrentSong(){
+	var intervalId = window.setInterval(async function(){
+		let data = await getCurrentSongFromServer()
+		let receivedTimestamp = parseInt(data[2]);
+		let isPlaying = (parseInt(data[3]) == 1)
+		console.log(isPlaying)
+		if (data[0] !== $("#vid").attr("src") && receivedTimestamp > parseInt(latestVidTime)){
+			latestVidTime = parseInt(receivedTimestamp)
+			let link = data[0]
+			let title = data[1]
+			await updatePlayer(link, title)
+		}
+		if (isPlaying){
+			$("#vid")[0].play();
+		} else {
+			$("#vid")[0].pause();
+		}
+	}, 5000);
+}
+
+async function getCurrentSongFromServer(){
+	var myHeaders = new Headers();
+	myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
+
+	var urlencoded = new URLSearchParams();
+	urlencoded.append("channelID", channelID);
+	urlencoded.append("userID", userID);
+
+
+	var requestOptions = {
+	method: 'POST',
+	headers: myHeaders,
+	body: urlencoded,
+	redirect: 'follow'
+	};
+
+	let data;
+	await fetch(serverURL + "/get", requestOptions)
+	.then(response => response.json())
+	.then(info => data = info);
+
+	console.log(data)
+	data = data.split(",")
+	return data
+}
+
+
+function initializeSlider(){
 	$("#flat-slider").slider()
 	.slider({
 	    max: 20,
@@ -66,51 +145,7 @@ $(function() {
 
 	$("#vid").prop('volume', $("#flat-slider").slider("value")/20)
 
-	window.Twitch.ext.listen("broadcast", (x,y,data) => {
-		var dataF = JSON.parse(JSON.parse(JSON.stringify(data)))
-		if (dataF.length == 2){
-			if ((!isLoop && !(dataF[0] === currUrl)) || (isLoop && hasEnded)){
-				ga('send', 'pageview');
-				isPaused = false
-				// $(".temp:hover").css("animation-play-state", "paused");
-				// $(".temp:hover").css("animation-play-state", "running");
-				$("#url").removeClass('temp');
-
-				hasEnded = false;
-				currUrl = dataF[0]
-				$("#url").html(dataF[1]);
-				if ($('#url')[0].scrollWidth >=  $(document).width()) {
-					$("#url").addClass('temp');
-				} else {
-					$("#url").removeClass('temp');
-				}
-				$('.play').html("pause");
-				$("#vid").attr("src", dataF[0]);
-				$("#vid").load();
-				if (!isPaused){
-					$("#vid").play();
-				}
-			}
-		} else if (dataF.length == 1){
-			var event = dataF[0];
-			if (event.localeCompare("pause") == 0){
-				document.getElementById("vid").pause();
-				isPaused = true;
-			}
-			if (event.localeCompare("play") == 0){
-				document.getElementById("vid").play();
-				isPaused = false;
-			}
-			if (event === "loop1"){
-				isLoop = true
-			}
-			if (event === "loop0"){
-				isLoop = false;
-			}
-		}
-	});
-
-	$("#down").click(function(){
+	$("#down").on('click', function(){
 		if (!isMuted){
 			isMuted = true;
 			lastVol = $("#flat-slider").slider("value");
@@ -130,12 +165,14 @@ $(function() {
 			isMuted = false;
 		}
 	})
+}
 
+
+function initializeTheme(){
 	$("body").addClass("sun")
-
-	// $("#flat-slider.ui-slider").css("background", "#d5cebc");
+// $("#flat-slider.ui-slider").css("background", "#d5cebc");
 	// $("#flat-slider.ui-slider .ui-slider-line").css("background", "#d5cebc");
-	$(".themeWrap").click(function() {
+	$(".themeWrap").on('click', function() {
 		if (isLight) {
 			isLight = false;
 			$("body").addClass("moon")
@@ -152,4 +189,4 @@ $(function() {
 			$("#theme").html("brightness_5")
 		}
 	})
-});
+}

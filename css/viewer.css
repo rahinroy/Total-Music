@@ -117,7 +117,8 @@ body{
 
 #now, #url {
 	font-size: 5em;
-	font-weight: 600;
+  font-weight: 600;
+  color: #d5cebc;
 }
 
 #now {
