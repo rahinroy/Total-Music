@@ -2,6 +2,13 @@
 
 An extension for Twitch.tv to play music from the audience end to avoid DMCA issues for streamers
 
+Streamer View:
+![streamer view](https://imgur.com/a/7uJDOv5)
+
+Viewer Perspective:
+![viewer POV 1](https://imgur.com/a/imLNCOE)
+![viewer POV 2](https://imgur.com/a/e9acGkS)
+
 
 ## File Structure:
 #### broadcaster side:
